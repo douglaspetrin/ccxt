@@ -34,13 +34,16 @@ let files = [
 
     'dist/ccxt.browser.js',
 
-    'python/test/test_decimal_to_precision.py',
+    'python/ccxt/test/test_decimal_to_precision.py',
     'php/test/decimal_to_precision.php',
 
-    'python/test/test_exchange_datetime_functions.py',
+    'python/ccxt/test/test_exchange_datetime_functions.py',
     'php/test/test_exchange_datetime_functions.php',
 
-    'python/test/test.py',
+    'python/ccxt/test/test_sync.py',
+
+    'wiki/Exchange-Markets-By-Country.md',
+    'wiki/Exchange-Markets.md',
 
     'doc/FAQ.rst',
     'doc/README.rst',
@@ -58,6 +61,7 @@ for (const id of require ('../exchanges.json').ids) {
     files.push (`python/ccxt/${id}.py`)
     files.push (`python/ccxt/async_support/${id}.py`)
     files.push (`php/${id}.php`)
+    files.push (`php/async/${id}.php`)
 }
 
 // Filter untracked files (otherwise "git update-index" would fail)
@@ -66,7 +70,7 @@ try {
     files = files.filter (f => !untrackedFiles.has (f))
 
 } catch (e) {
-    
+
     // There is a legit case when we're not in a git repo (happens on AppVeyor)
     if (!e.message.toLowerCase ().includes ('not a git repository')) {
         log.bright.red (e)
@@ -79,7 +83,7 @@ if (process.argv.includes ('--unignore')) {
     gitUpdateIndex ('no-assume-unchanged', files)
 
 } else {
-    
+
     log.bright.cyan (`Disabling the git changes tracking for ${files.length} generated files...`)
     gitUpdateIndex ('assume-unchanged', files)
 }

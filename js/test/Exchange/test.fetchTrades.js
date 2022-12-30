@@ -2,25 +2,28 @@
 
 // ----------------------------------------------------------------------------
 
-const log       = require ('ololog')
-    , ansi      = require ('ansicolor').nice
-    , chai      = require ('chai')
-    , expect    = chai.expect
-    , assert    = chai.assert
+const assert = require ('assert')
     , testTrade = require ('./test.trade.js')
 
-/*  ------------------------------------------------------------------------ */
+// ----------------------------------------------------------------------------
 
 module.exports = async (exchange, symbol) => {
 
-    if (exchange.has.fetchTrades) {
+    const method = 'fetchTrades'
 
-        // log (symbol.green, 'fetching trades...')
+    const skippedExchanges = []
 
-        let trades = await exchange.fetchTrades (symbol)
+    if (skippedExchanges.includes (exchange.id)) {
+        console.log (exchange.id, 'found in ignored exchanges, skipping ' + method + '...')
+        return
+    }
+
+    if (exchange.has[method]) {
+
+        const trades = await exchange[method] (symbol)
         assert (trades instanceof Array)
-        log (symbol.green, 'fetched', Object.values (trades).length.toString ().green, 'trades')
-        let now = Date.now ()
+        console.log (symbol, 'fetched', Object.values (trades).length, 'trades')
+        const now = Date.now ()
         for (let i = 0; i < trades.length; i++) {
             testTrade (exchange, trades[i], symbol, now)
             if (i > 0) {
@@ -30,10 +33,9 @@ module.exports = async (exchange, symbol) => {
             }
 
         }
-        // log (asTable (trades))
 
     } else {
 
-        log (symbol.green, 'fetchTrades () not supported'.yellow)
+        console.log (symbol, method + '() is not supported')
     }
 }

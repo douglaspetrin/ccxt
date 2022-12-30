@@ -1,6 +1,6 @@
 "use strict";
 
-const ccxt = require ('ccxt')
+const ccxt = require ('../../ccxt.js')
     , log  = require ('ololog').noLocate // npm install ololog
     , fs   = require ('fs')
 
@@ -23,9 +23,7 @@ const ccxt = require ('ccxt')
 
         // instantiate each exchange and save it to the exchanges list
 
-        .map (id => new ccxt[id] ({
-            'enableRateLimit': true,
-        }))
+        .map (id => new ccxt[id] ())
 
     // the worker function for each "async thread"
     const worker = async function () {

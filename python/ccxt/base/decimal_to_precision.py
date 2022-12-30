@@ -6,6 +6,8 @@ import re
 __all__ = [
     'TRUNCATE',
     'ROUND',
+    'ROUND_UP',
+    'ROUND_DOWN',
     'DECIMAL_PLACES',
     'SIGNIFICANT_DIGITS',
     'TICK_SIZE',
@@ -18,6 +20,8 @@ __all__ = [
 # rounding mode
 TRUNCATE = 0
 ROUND = 1
+ROUND_UP = 2
+ROUND_DOWN = 3
 
 # digits counting mode
 DECIMAL_PLACES = 2
@@ -32,7 +36,7 @@ PAD_WITH_ZERO = 6
 def decimal_to_precision(n, rounding_mode=ROUND, precision=None, counting_mode=DECIMAL_PLACES, padding_mode=NO_PADDING):
     assert precision is not None
     if counting_mode == TICK_SIZE:
-        assert(isinstance(precision, float) or isinstance(precision, numbers.Integral))
+        assert(isinstance(precision, float) or isinstance(precision, decimal.Decimal) or isinstance(precision, numbers.Integral))
     else:
         assert(isinstance(precision, numbers.Integral))
     assert rounding_mode in [TRUNCATE, ROUND]
@@ -66,7 +70,8 @@ def decimal_to_precision(n, rounding_mode=ROUND, precision=None, counting_mode=D
             return decimal_to_precision(dec - dec % to_nearest, rounding_mode, 0, DECIMAL_PLACES, padding_mode)
 
     if counting_mode == TICK_SIZE:
-        missing = dec % precision_dec
+        # python modulo with negative numbers behaves different than js/php, so use abs first
+        missing = abs(dec) % precision_dec
         if missing != 0:
             if rounding_mode == ROUND:
                 if dec > 0:
@@ -76,11 +81,14 @@ def decimal_to_precision(n, rounding_mode=ROUND, precision=None, counting_mode=D
                         dec = dec - missing
                 else:
                     if missing >= precision / 2:
-                        dec = dec - missing
+                        dec = dec + missing - precision_dec
                     else:
-                        dec = dec - missing - precision_dec
+                        dec = dec + missing
             elif rounding_mode == TRUNCATE:
-                dec = dec - missing
+                if dec < 0:
+                    dec = dec + missing
+                else:
+                    dec = dec - missing
         parts = re.sub(r'0+$', '', '{:f}'.format(precision_dec)).split('.')
         if len(parts) > 1:
             new_precision = len(parts[1])
@@ -117,7 +125,7 @@ def decimal_to_precision(n, rounding_mode=ROUND, precision=None, counting_mode=D
         elif counting_mode == SIGNIFICANT_DIGITS:
             if precision == 0:
                 return '0'
-            dot = string.index('.') if '.' in string else 0
+            dot = string.index('.') if '.' in string else len(string)
             start = dot - dec.adjusted()
             end = start + precision
             # need to clarify these conditionals
@@ -156,5 +164,8 @@ def decimal_to_precision(n, rounding_mode=ROUND, precision=None, counting_mode=D
 
 def number_to_string(x):
     # avoids scientific notation for too large and too small numbers
+    if x is None:
+        return None
     d = decimal.Decimal(str(x))
-    return '{:f}'.format(d)
+    formatted = '{:f}'.format(d)
+    return formatted.rstrip('0').rstrip('.') if '.' in formatted else formatted
